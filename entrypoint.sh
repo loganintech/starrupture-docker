@@ -105,16 +105,26 @@ install_or_update_server() {
 find_server_executable() {
     log_info "Looking for server executable..."
 
-    # Common patterns for dedicated server executables
+    # First, look for the actual server binary (Shipping.exe) in Binaries folder
+    # This is the real server, not the small launcher at the root
+    local shipping_exe=$(find "${SERVER_FILES_DIR}" -path "*/Binaries/Win64/*" -iname "*Shipping.exe" -type f 2>/dev/null | head -1)
+    if [[ -n "${shipping_exe}" ]]; then
+        SERVER_EXE="${shipping_exe}"
+        log_success "Found server executable (Shipping): ${SERVER_EXE}"
+        return 0
+    fi
+
+    # Fallback: Look for server executables, preferring larger files (actual servers vs launchers)
+    # Sort by size descending to get the actual binary, not the launcher
     local patterns=(
-        "StarRuptureServer*.exe"
+        "*ServerEOS*-Win64-Shipping.exe"
+        "*Server*-Win64-Shipping.exe"
         "*Server*.exe"
         "*Dedicated*.exe"
-        "*.exe"
     )
 
     for pattern in "${patterns[@]}"; do
-        local found=$(find "${SERVER_FILES_DIR}" -maxdepth 2 -iname "${pattern}" -type f 2>/dev/null | head -1)
+        local found=$(find "${SERVER_FILES_DIR}" -iname "${pattern}" -type f -size +10M 2>/dev/null | head -1)
         if [[ -n "${found}" ]]; then
             SERVER_EXE="${found}"
             log_success "Found server executable: ${SERVER_EXE}"
@@ -122,9 +132,17 @@ find_server_executable() {
         fi
     done
 
+    # Last resort: any large exe
+    local any_exe=$(find "${SERVER_FILES_DIR}" -iname "*.exe" -type f -size +10M 2>/dev/null | head -1)
+    if [[ -n "${any_exe}" ]]; then
+        SERVER_EXE="${any_exe}"
+        log_warn "Using fallback executable (large exe): ${SERVER_EXE}"
+        return 0
+    fi
+
     log_error "Could not find server executable in ${SERVER_FILES_DIR}"
     log_info "Directory contents:"
-    ls -la "${SERVER_FILES_DIR}" || true
+    find "${SERVER_FILES_DIR}" -name "*.exe" -type f -exec ls -la {} \; || true
     return 1
 }
 
