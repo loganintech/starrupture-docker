@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-LABEL maintainer="logan"
+LABEL maintainer="loganintech"
 LABEL description="Starrupture Dedicated Server"
 
 # Prevent interactive prompts during package installation
