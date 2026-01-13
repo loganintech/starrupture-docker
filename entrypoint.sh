@@ -24,9 +24,9 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Paths
-STEAMCMD_DIR="/home/steam/steamcmd"
-SERVER_DIR="/home/steam/starrupture"
+# Paths (using /home/container to match pterodactyl yolk base image)
+STEAMCMD_DIR="/home/container/steamcmd"
+SERVER_DIR="/home/container/starrupture"
 SERVER_FILES_DIR="${SERVER_DIR}/server_files"
 SAVES_DIR="${SERVER_DIR}/saves"
 CONFIG_DIR="${SERVER_DIR}/config"
