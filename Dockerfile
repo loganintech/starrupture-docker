@@ -57,7 +57,8 @@ USER steam
 # Initialize Wine prefix (do this during build to speed up first run)
 ENV WINEPREFIX=/home/steam/.wine
 ENV WINEARCH=win64
-ENV WINEDEBUG=-all
+# Set to -all to suppress Wine debug output, or leave empty for debug info
+ENV WINEDEBUG=fixme-all
 RUN wineboot --init && \
     wineserver --wait
 

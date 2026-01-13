@@ -34,33 +34,11 @@ CONFIG_DIR="${SERVER_DIR}/config"
 # Server executable (will be found after installation)
 SERVER_EXE=""
 
-# PID of the server process
-SERVER_PID=""
-
 # Signal handler for graceful shutdown
 shutdown_handler() {
     log_info "Received shutdown signal, stopping server gracefully..."
 
-    if [[ -n "${SERVER_PID}" ]] && kill -0 "${SERVER_PID}" 2>/dev/null; then
-        # Send SIGTERM to Wine process
-        kill -TERM "${SERVER_PID}" 2>/dev/null || true
-
-        # Wait for graceful shutdown (max 30 seconds)
-        local count=0
-        while kill -0 "${SERVER_PID}" 2>/dev/null && [[ ${count} -lt 30 ]]; do
-            log_info "Waiting for server to stop... (${count}/30)"
-            sleep 1
-            ((count++))
-        done
-
-        # Force kill if still running
-        if kill -0 "${SERVER_PID}" 2>/dev/null; then
-            log_warn "Server did not stop gracefully, forcing shutdown..."
-            kill -KILL "${SERVER_PID}" 2>/dev/null || true
-        fi
-    fi
-
-    # Stop Wine server
+    # Stop Wine server (this will terminate all Wine processes)
     wineserver -k 2>/dev/null || true
 
     log_success "Server stopped"
@@ -211,6 +189,9 @@ start_server() {
         args="${args} -QueryPort=${QUERY_PORT}"
     fi
 
+    # Always enable logging
+    args="${args} -Log"
+
     # Add any additional arguments
     if [[ -n "${ADDITIONAL_ARGS}" ]]; then
         args="${args} ${ADDITIONAL_ARGS}"
@@ -219,17 +200,11 @@ start_server() {
     log_info "Launching: wine ${SERVER_EXE} ${args}"
 
     # Use xvfb-run for headless Wine execution
+    # Run in foreground so we get all output
     xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
-        wine "${SERVER_EXE}" ${args} &
+        wine "${SERVER_EXE}" ${args}
 
-    SERVER_PID=$!
-
-    log_success "Server started with PID: ${SERVER_PID}"
-
-    # Wait for server process
-    wait ${SERVER_PID}
     local exit_code=$?
-
     log_info "Server exited with code: ${exit_code}"
     return ${exit_code}
 }
