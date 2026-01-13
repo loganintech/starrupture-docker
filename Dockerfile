@@ -4,17 +4,13 @@ FROM ghcr.io/ptero-eggs/yolks:wine_latest
 LABEL maintainer="loganintech"
 LABEL description="Starrupture Dedicated Server"
 
-# Switch to root for setup
-USER root
-
 # Install tini for signal handling
 RUN apt-get update && apt-get install -y \
     tini \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# The base image uses /home/container with container user
-# SteamCMD is already available in the base image
+# The base image uses /home/container as HOME (runs as root)
 WORKDIR /home/container
 
 # Create directories for server files and saves
@@ -22,16 +18,11 @@ RUN mkdir -p /home/container/starrupture \
              /home/container/starrupture/server_files \
              /home/container/starrupture/saves \
              /home/container/starrupture/config \
-             /home/container/steamcmd && \
-    chown -R container:container /home/container
+             /home/container/steamcmd
 
-# Install SteamCMD in our directory
+# Install SteamCMD
 RUN cd /home/container/steamcmd && \
-    curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - && \
-    chown -R container:container /home/container/steamcmd
-
-# Switch to container user (matches base image)
-USER container
+    curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 
 # Wine configuration (inherit from base)
 ENV WINEPREFIX=/home/container/.wine
@@ -57,7 +48,7 @@ ENV START_NEW_GAME=false
 ENV LOAD_SAVED_GAME=true
 
 # Copy entrypoint script
-COPY --chown=container:container entrypoint.sh /home/container/entrypoint.sh
+COPY entrypoint.sh /home/container/entrypoint.sh
 RUN chmod +x /home/container/entrypoint.sh
 
 # Expose ports (UDP + TCP for game, UDP for query)
