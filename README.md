@@ -19,6 +19,7 @@ docker run -d \
   --name starrupture \
   -p 7777:7777/udp \
   -p 7777:7777/tcp \
+  -p 27015:27015/udp \
   -v starrupture-data:/home/steam/starrupture \
   starrupture-server
 ```
@@ -28,9 +29,23 @@ docker run -d \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SERVER_PORT` | `7777` | Port for game connections (UDP + TCP) |
+| `QUERY_PORT` | `27015` | Steam query port for server browser (UDP) |
+| `MULTIHOME` | `0.0.0.0` | Network interface to bind to |
 | `UPDATE_ON_START` | `true` | Update server files on container start |
 | `VALIDATE_ON_START` | `false` | Validate all files via SteamCMD (slower but thorough) |
 | `ADDITIONAL_ARGS` | `` | Additional command-line arguments for the server |
+
+### DSSettings (Auto-Start Configuration)
+
+Set `SESSION_NAME` to enable DSSettings.txt generation for automatic server startup:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SESSION_NAME` | `` | Server session name (enables DSSettings if set) |
+| `SAVE_GAME_NAME` | `` | Save file to load (e.g., `AutoSave0.sav`) |
+| `SAVE_GAME_INTERVAL` | `300` | Auto-save interval in seconds |
+| `START_NEW_GAME` | `false` | Start a new game instead of loading |
+| `LOAD_SAVED_GAME` | `true` | Load an existing save game |
 
 ## Volumes
 
@@ -59,10 +74,13 @@ services:
     ports:
       - "7777:7777/udp"
       - "7777:7777/tcp"
+      - "27015:27015/udp"
     volumes:
       - starrupture-data:/home/steam/starrupture
     environment:
       - SERVER_PORT=7777
+      - QUERY_PORT=27015
+      - MULTIHOME=0.0.0.0
       - UPDATE_ON_START=true
       - VALIDATE_ON_START=false
 

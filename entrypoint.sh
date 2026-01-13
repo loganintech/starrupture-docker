@@ -154,11 +154,36 @@ find_server_executable() {
 configure_server() {
     log_info "Configuring server..."
 
-    # Link saves directory if the game uses a specific location
-    # This will depend on where Starrupture stores saves
+    # Create DSSettings.txt if SESSION_NAME is set (for auto-start configuration)
+    if [[ -n "${SESSION_NAME}" ]]; then
+        local ds_settings_dir="${SERVER_FILES_DIR}/StarRupture/Saved/Config/WindowsServer"
+        local ds_settings_file="${ds_settings_dir}/DSSettings.txt"
+
+        log_info "Creating DSSettings.txt for session: ${SESSION_NAME}"
+        mkdir -p "${ds_settings_dir}"
+
+        cat > "${ds_settings_file}" << EOF
+{
+  "SessionName": "${SESSION_NAME}",
+  "SaveGameInterval": "${SAVE_GAME_INTERVAL}",
+  "StartNewGame": "${START_NEW_GAME}",
+  "LoadSavedGame": "${LOAD_SAVED_GAME}",
+  "SaveGameName": "${SAVE_GAME_NAME}"
+}
+EOF
+
+        log_success "DSSettings.txt created at ${ds_settings_file}"
+        log_info "  SessionName: ${SESSION_NAME}"
+        log_info "  SaveGameName: ${SAVE_GAME_NAME}"
+        log_info "  SaveGameInterval: ${SAVE_GAME_INTERVAL}"
+        log_info "  StartNewGame: ${START_NEW_GAME}"
+        log_info "  LoadSavedGame: ${LOAD_SAVED_GAME}"
+    fi
 
     log_info "Server configuration:"
     log_info "  - Port: ${SERVER_PORT}"
+    log_info "  - Query Port: ${QUERY_PORT}"
+    log_info "  - Multihome: ${MULTIHOME}"
     log_info "  - Additional args: ${ADDITIONAL_ARGS:-none}"
 }
 
@@ -171,9 +196,19 @@ start_server() {
     # Build command line arguments
     local args=""
 
+    # Add multihome for network binding
+    if [[ -n "${MULTIHOME}" ]]; then
+        args="${args} -MULTIHOME=${MULTIHOME}"
+    fi
+
     # Add port if supported (adjust based on actual server args)
     if [[ -n "${SERVER_PORT}" ]]; then
         args="${args} -port=${SERVER_PORT}"
+    fi
+
+    # Add query port for Steam server browser
+    if [[ -n "${QUERY_PORT}" ]]; then
+        args="${args} -QueryPort=${QUERY_PORT}"
     fi
 
     # Add any additional arguments
@@ -208,8 +243,11 @@ main() {
     log_info "Configuration:"
     log_info "  STEAM_APP_ID:      ${STEAM_APP_ID}"
     log_info "  SERVER_PORT:       ${SERVER_PORT}"
+    log_info "  QUERY_PORT:        ${QUERY_PORT}"
+    log_info "  MULTIHOME:         ${MULTIHOME}"
     log_info "  UPDATE_ON_START:   ${UPDATE_ON_START}"
     log_info "  VALIDATE_ON_START: ${VALIDATE_ON_START}"
+    log_info "  SESSION_NAME:      ${SESSION_NAME:-<none>}"
     log_info "  ADDITIONAL_ARGS:   ${ADDITIONAL_ARGS:-<none>}"
     log_info ""
 
